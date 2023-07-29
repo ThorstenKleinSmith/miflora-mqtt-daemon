@@ -114,7 +114,7 @@ elif reporting_mode == 'wirenboard-mqtt':
 else:
     default_base_topic = 'miflora'
 
-base_topic = config['MQTT'].get('base_topic', default_base_topic).lower()
+base_topic = config['MQTT'].get('base_topic', default_base_topic)
 sleep_period = config['Daemon'].getint('period', 300)
 miflora_cache_timeout = sleep_period - 1
 
@@ -237,16 +237,16 @@ elif reporting_mode == 'mqtt-homie':
 
     for [flora_name, flora] in flores.items():
         print_line('Connecting to MQTT broker for "{}" ...'.format(flora['name_pretty']))
-        mqtt_client[flora_name.lower()] = mqtt.Client(flora_name.lower())
-        mqtt_client[flora_name.lower()].on_connect = on_connect
-        mqtt_client[flora_name.lower()].on_publish = on_publish
-        mqtt_client[flora_name.lower()].will_set('{}/{}/$state'.format(base_topic, flora_name.lower()), payload='disconnected', retain=True)
+        mqtt_client[flora_name] = mqtt.Client(flora_name)
+        mqtt_client[flora_name].on_connect = on_connect
+        mqtt_client[flora_name].on_publish = on_publish
+        mqtt_client[flora_name].will_set('{}/{}/$state'.format(base_topic, flora_name), payload='disconnected', retain=True)
 
         if config['MQTT'].getboolean('tls', False):
             # According to the docs, setting PROTOCOL_SSLv23 "Selects the highest protocol version
             # that both the client and server support. Despite the name, this option can select
             # “TLS” protocols as well as “SSL”" - so this seems like a resonable default
-            mqtt_client[flora_name.lower()].tls_set(
+            mqtt_client[flora_name].tls_set(
                 ca_certs=config['MQTT'].get('tls_ca_cert', None),
                 keyfile=config['MQTT'].get('tls_keyfile', None),
                 certfile=config['MQTT'].get('tls_certfile', None),
@@ -257,78 +257,78 @@ elif reporting_mode == 'mqtt-homie':
         mqtt_password = os.environ.get("MQTT_PASSWORD", config['MQTT'].get('password', None))
 
         if mqtt_username:
-            mqtt_client[flora_name.lower()].username_pw_set(mqtt_username, mqtt_password)
+            mqtt_client[flora_name].username_pw_set(mqtt_username, mqtt_password)
         try:
-            mqtt_client[flora_name.lower()].connect(os.environ.get('MQTT_HOSTNAME', config['MQTT'].get('hostname', 'localhost')),
+            mqtt_client[flora_name].connect(os.environ.get('MQTT_HOSTNAME', config['MQTT'].get('hostname', 'localhost')),
                                 port=int(os.environ.get('MQTT_PORT', config['MQTT'].get('port', '1883'))),
                                 keepalive=config['MQTT'].getint('keepalive', 60))
         except:
             print_line('MQTT connection error. Please check your settings in the configuration file "config.ini"', error=True, sd_notify=True)
             sys.exit(1)
         else:
-            mqtt_client[flora_name.lower()].loop_start()
+            mqtt_client[flora_name].loop_start()
             sleep(1.0) # some slack to establish the connection
 
-        topic_path = '{}/{}'.format(base_topic, flora_name.lower())
+        topic_path = '{}/{}'.format(base_topic, flora_name)
 
-        mqtt_client[flora_name.lower()].publish('{}/$homie'.format(topic_path), '3.0', 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/$name'.format(topic_path), flora['name_pretty'], 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/$state'.format(topic_path), 'ready', 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/$mac'.format(topic_path), flora['mac'], 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/$stats'.format(topic_path), 'interval,timestamp', 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/$stats/interval'.format(topic_path), flora['refresh'], 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/$stats/timestamp'.format(topic_path), strftime('%Y-%m-%dT%H:%M:%S%z', localtime()), 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/$fw/name'.format(topic_path), 'miflora-firmware', 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/$fw/version'.format(topic_path), flora['firmware'], 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/$nodes'.format(topic_path), 'sensor', 1, True)
+        mqtt_client[flora_name].publish('{}/$homie'.format(topic_path), '3.0', 1, True)
+        mqtt_client[flora_name].publish('{}/$name'.format(topic_path), flora['name_pretty'], 1, True)
+        mqtt_client[flora_name].publish('{}/$state'.format(topic_path), 'ready', 1, True)
+        mqtt_client[flora_name].publish('{}/$mac'.format(topic_path), flora['mac'], 1, True)
+        mqtt_client[flora_name].publish('{}/$stats'.format(topic_path), 'interval,timestamp', 1, True)
+        mqtt_client[flora_name].publish('{}/$stats/interval'.format(topic_path), flora['refresh'], 1, True)
+        mqtt_client[flora_name].publish('{}/$stats/timestamp'.format(topic_path), strftime('%Y-%m-%dT%H:%M:%S%z', localtime()), 1, True)
+        mqtt_client[flora_name].publish('{}/$fw/name'.format(topic_path), 'miflora-firmware', 1, True)
+        mqtt_client[flora_name].publish('{}/$fw/version'.format(topic_path), flora['firmware'], 1, True)
+        mqtt_client[flora_name].publish('{}/$nodes'.format(topic_path), 'sensor', 1, True)
 
         sensor_path = '{}/sensor'.format(topic_path)
 
-        mqtt_client[flora_name.lower()].publish('{}/$name'.format(sensor_path), 'miflora', 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/$properties'.format(sensor_path), 'battery,conductivity,light,moisture,temperature', 1, True)
+        mqtt_client[flora_name].publish('{}/$name'.format(sensor_path), 'miflora', 1, True)
+        mqtt_client[flora_name].publish('{}/$properties'.format(sensor_path), 'battery,conductivity,light,moisture,temperature', 1, True)
 
-        mqtt_client[flora_name.lower()].publish('{}/battery/$name'.format(sensor_path), 'battery', 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/battery/$settable'.format(sensor_path), 'false', 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/battery/$unit'.format(sensor_path), '%', 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/battery/$datatype'.format(sensor_path), 'integer', 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/battery/$format'.format(sensor_path), '0:100', 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/battery/$retained'.format(sensor_path), 'true', 1, True)
+        mqtt_client[flora_name].publish('{}/battery/$name'.format(sensor_path), 'battery', 1, True)
+        mqtt_client[flora_name].publish('{}/battery/$settable'.format(sensor_path), 'false', 1, True)
+        mqtt_client[flora_name].publish('{}/battery/$unit'.format(sensor_path), '%', 1, True)
+        mqtt_client[flora_name].publish('{}/battery/$datatype'.format(sensor_path), 'integer', 1, True)
+        mqtt_client[flora_name].publish('{}/battery/$format'.format(sensor_path), '0:100', 1, True)
+        mqtt_client[flora_name].publish('{}/battery/$retained'.format(sensor_path), 'true', 1, True)
 
-        mqtt_client[flora_name.lower()].publish('{}/conductivity/$name'.format(sensor_path), 'conductivity', 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/conductivity/$settable'.format(sensor_path), 'false', 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/conductivity/$unit'.format(sensor_path), 'µS/cm', 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/conductivity/$datatype'.format(sensor_path), 'integer', 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/conductivity/$format'.format(sensor_path), '0:*', 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/conductivity/$retained'.format(sensor_path), 'true', 1, True)
+        mqtt_client[flora_name].publish('{}/conductivity/$name'.format(sensor_path), 'conductivity', 1, True)
+        mqtt_client[flora_name].publish('{}/conductivity/$settable'.format(sensor_path), 'false', 1, True)
+        mqtt_client[flora_name].publish('{}/conductivity/$unit'.format(sensor_path), 'µS/cm', 1, True)
+        mqtt_client[flora_name].publish('{}/conductivity/$datatype'.format(sensor_path), 'integer', 1, True)
+        mqtt_client[flora_name].publish('{}/conductivity/$format'.format(sensor_path), '0:*', 1, True)
+        mqtt_client[flora_name].publish('{}/conductivity/$retained'.format(sensor_path), 'true', 1, True)
 
-        mqtt_client[flora_name.lower()].publish('{}/light/$name'.format(sensor_path), 'light', 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/light/$settable'.format(sensor_path), 'false', 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/light/$unit'.format(sensor_path), 'lux', 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/light/$datatype'.format(sensor_path), 'integer', 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/light/$format'.format(sensor_path), '0:50000', 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/light/$retained'.format(sensor_path), 'true', 1, True)
+        mqtt_client[flora_name].publish('{}/light/$name'.format(sensor_path), 'light', 1, True)
+        mqtt_client[flora_name].publish('{}/light/$settable'.format(sensor_path), 'false', 1, True)
+        mqtt_client[flora_name].publish('{}/light/$unit'.format(sensor_path), 'lux', 1, True)
+        mqtt_client[flora_name].publish('{}/light/$datatype'.format(sensor_path), 'integer', 1, True)
+        mqtt_client[flora_name].publish('{}/light/$format'.format(sensor_path), '0:50000', 1, True)
+        mqtt_client[flora_name].publish('{}/light/$retained'.format(sensor_path), 'true', 1, True)
 
-        mqtt_client[flora_name.lower()].publish('{}/moisture/$name'.format(sensor_path), 'moisture', 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/moisture/$settable'.format(sensor_path), 'false', 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/moisture/$unit'.format(sensor_path), '%', 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/moisture/$datatype'.format(sensor_path), 'integer', 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/moisture/$format'.format(sensor_path), '0:100', 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/moisture/$retained'.format(sensor_path), 'true', 1, True)
+        mqtt_client[flora_name].publish('{}/moisture/$name'.format(sensor_path), 'moisture', 1, True)
+        mqtt_client[flora_name].publish('{}/moisture/$settable'.format(sensor_path), 'false', 1, True)
+        mqtt_client[flora_name].publish('{}/moisture/$unit'.format(sensor_path), '%', 1, True)
+        mqtt_client[flora_name].publish('{}/moisture/$datatype'.format(sensor_path), 'integer', 1, True)
+        mqtt_client[flora_name].publish('{}/moisture/$format'.format(sensor_path), '0:100', 1, True)
+        mqtt_client[flora_name].publish('{}/moisture/$retained'.format(sensor_path), 'true', 1, True)
 
-        mqtt_client[flora_name.lower()].publish('{}/temperature/$name'.format(sensor_path), 'temperature', 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/temperature/$settable'.format(sensor_path), 'false', 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/temperature/$unit'.format(sensor_path), '°C', 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/temperature/$datatype'.format(sensor_path), 'float', 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/temperature/$format'.format(sensor_path), '*', 1, True)
-        mqtt_client[flora_name.lower()].publish('{}/temperature/$retained'.format(sensor_path), 'true', 1, True)
+        mqtt_client[flora_name].publish('{}/temperature/$name'.format(sensor_path), 'temperature', 1, True)
+        mqtt_client[flora_name].publish('{}/temperature/$settable'.format(sensor_path), 'false', 1, True)
+        mqtt_client[flora_name].publish('{}/temperature/$unit'.format(sensor_path), '°C', 1, True)
+        mqtt_client[flora_name].publish('{}/temperature/$datatype'.format(sensor_path), 'float', 1, True)
+        mqtt_client[flora_name].publish('{}/temperature/$format'.format(sensor_path), '*', 1, True)
+        mqtt_client[flora_name].publish('{}/temperature/$retained'.format(sensor_path), 'true', 1, True)
     sleep(0.5) # some slack for the publish roundtrip and callback function
     print()
 elif reporting_mode == 'homeassistant-mqtt':
     print_line('Announcing Mi Flora devices to MQTT broker for auto-discovery ...')
     for [flora_name, flora] in flores.items():
-        state_topic = '{}/sensor/{}/state'.format(base_topic, flora_name.lower())
+        state_topic = '{}/sensor/{}/state'.format(base_topic, flora_name)
         for [sensor, params] in parameters.items():
-            discovery_topic = 'homeassistant/sensor/{}/{}/config'.format(flora_name.lower(), sensor)
+            discovery_topic = 'homeassistant/sensor/{}/{}/config'.format(flora_name, sensor)
             payload = OrderedDict()
             payload['name'] = "{} {}".format(flora_name, sensor.title())
             payload['unique_id'] = "{}-{}".format(flora['mac'].lower().replace(":", ""), sensor)
@@ -351,9 +351,9 @@ elif reporting_mode == 'homeassistant-mqtt':
             mqtt_client.publish(discovery_topic, json.dumps(payload), 1, True)
 elif reporting_mode == 'gladys-mqtt':
     print_line('Announcing Mi Flora devices to MQTT broker for auto-discovery ...')
-    
+
     for [flora_name, flora] in flores.items():
-        topic_path = '{}/mqtt:miflora:{}/feature'.format(base_topic, flora_name.lower())
+        topic_path = '{}/mqtt:miflora:{}/feature'.format(base_topic, flora_name)
         data = OrderedDict()
         for param,_ in parameters.items():
             data[param] = flora['poller'].parameter_value(param)
@@ -412,7 +412,7 @@ while True:
         if not flora['poller']._cache:
             flora['stats']['failure'] += 1
             if reporting_mode == 'mqtt-homie':
-                mqtt_client[flora_name.lower()].publish('{}/{}/$state'.format(base_topic, flora_name.lower()), 'disconnected', 1, True)
+                mqtt_client[flora_name].publish('{}/{}/$state'.format(base_topic, flora_name), 'disconnected', 1, True)
             print_line('Failed to retrieve data from Mi Flora sensor "{}" ({}), success rate: {:.0%}'.format(
                 flora['name_pretty'], flora['mac'], flora['stats']['success']/flora['stats']['count']
                 ), error = True, sd_notify = True)
@@ -437,19 +437,19 @@ while True:
             mqtt_client.publish('{}'.format(base_topic), json.dumps(data))
             sleep(0.5) # some slack for the publish roundtrip and callback function
         elif reporting_mode == 'homeassistant-mqtt':
-            print_line('Publishing to MQTT topic "{}/sensor/{}/state"'.format(base_topic, flora_name.lower()))
-            mqtt_client.publish('{}/sensor/{}/state'.format(base_topic, flora_name.lower()), json.dumps(data), retain=True)
+            print_line('Publishing to MQTT topic "{}/sensor/{}/state"'.format(base_topic, flora_name))
+            mqtt_client.publish('{}/sensor/{}/state'.format(base_topic, flora_name), json.dumps(data), retain=True)
             sleep(0.5) # some slack for the publish roundtrip and callback function
         elif reporting_mode == 'gladys-mqtt':
-            print_line('Publishing to MQTT topic "{}/mqtt:miflora:{}/feature"'.format(base_topic, flora_name.lower()))
-            mqtt_client.publish('{}/mqtt:miflora:{}/feature'.format(base_topic, flora_name.lower()), json.dumps(data))
+            print_line('Publishing to MQTT topic "{}/mqtt:miflora:{}/feature"'.format(base_topic, flora_name))
+            mqtt_client.publish('{}/mqtt:miflora:{}/feature'.format(base_topic, flora_name), json.dumps(data))
             sleep(0.5) # some slack for the publish roundtrip and callback function
         elif reporting_mode == 'mqtt-homie':
-            print_line('Publishing data to MQTT base topic "{}/{}"'.format(base_topic, flora_name.lower()))
-            mqtt_client[flora_name.lower()].publish('{}/{}/$state'.format(base_topic, flora_name.lower()), 'ready', 1, True)
+            print_line('Publishing data to MQTT base topic "{}/{}"'.format(base_topic, flora_name))
+            mqtt_client[flora_name].publish('{}/{}/$state'.format(base_topic, flora_name), 'ready', 1, True)
             for [param, value] in data.items():
-                mqtt_client[flora_name.lower()].publish('{}/{}/sensor/{}'.format(base_topic, flora_name.lower(), param), value, 1, True)
-            mqtt_client[flora_name.lower()].publish('{}/{}/$stats/timestamp'.format(base_topic, flora_name.lower()), strftime('%Y-%m-%dT%H:%M:%S%z', localtime()), 1, True)
+                mqtt_client[flora_name].publish('{}/{}/sensor/{}'.format(base_topic, flora_name, param), value, 1, True)
+            mqtt_client[flora_name].publish('{}/{}/$stats/timestamp'.format(base_topic, flora_name), strftime('%Y-%m-%dT%H:%M:%S%z', localtime()), 1, True)
             sleep(0.5) # some slack for the publish roundtrip and callback function
         elif reporting_mode == 'mqtt-smarthome':
             for [param, value] in data.items():
